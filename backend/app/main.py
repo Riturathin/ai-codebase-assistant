@@ -3,10 +3,12 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import os
+import re
 import shutil
 import tempfile
+from urllib.parse import unquote
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from git import Repo
@@ -44,25 +46,67 @@ class IngestRequest(BaseModel):
     repo_id: str
 
 
+@app.get("/file")
+def get_file(repo_id: str, file_path: str):
+    try:
+        vector_store = VectorStore(collection_name=repo_id)
+
+        content = vector_store.get_file_content(file_path)
+
+        if not content:
+            raise HTTPException(status_code=404, detail="File not found")
+
+        return {"content": content}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # ------------------------
 # QUERY ENDPOINT
 # ------------------------
+
+
+def split_questions(text: str):
+    """
+    Splits numbered or multi-line questions into individual questions.
+    """
+    # Split by numbered format: 1. 2. 3.
+    numbered = re.split(r"\n?\s*\d+\.\s*", text)
+
+    # Remove empty strings
+    questions = [q.strip() for q in numbered if q.strip()]
+
+    if len(questions) > 1:
+        return questions
+
+    # Fallback: split by newline
+    lines = [l.strip() for l in text.split("\n") if l.strip()]
+    return lines
 
 
 @app.post("/query")
 async def query_repo(request: QueryRequest):
     try:
         vector_store = VectorStore(collection_name=request.repo_id)
-
-        # 🔥 Retrieve relevant chunks first
-        retrieved_chunks = vector_store.query(request.question)
-
         answer_generator = AnswerGenerator()
 
-        return StreamingResponse(
-            answer_generator.stream_answer(request.question, retrieved_chunks),
-            media_type="text/plain",
-        )
+        questions = split_questions(request.question)
+
+        def stream():
+            for idx, q in enumerate(questions, 1):
+                retrieved_chunks = vector_store.query(q)
+
+                # Stream section header
+                yield f"\n##Q## {idx}. {q}\n"
+
+                # Stream answer for this question
+                for chunk in answer_generator.stream_answer(q, retrieved_chunks):
+                    yield chunk
+
+                yield "\n\n"
+
+        return StreamingResponse(stream(), media_type="text/plain")
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -75,19 +119,25 @@ async def query_repo(request: QueryRequest):
 
 @app.post("/ingest")
 def ingest_repository(request: IngestRequest):
-    temp_dir = None
-
     try:
         repo_path = request.repo_path
         repo_id = request.repo_id
 
-        if repo_path.startswith("http"):
-            temp_dir = tempfile.mkdtemp()
-            Repo.clone_from(repo_path, temp_dir)
-            repo_path = temp_dir
+        # Create persistent repo directory
+        repos_root = os.path.join(os.getcwd(), "temp_repos")
+        os.makedirs(repos_root, exist_ok=True)
 
-        if not os.path.exists(repo_path):
-            raise HTTPException(status_code=400, detail="Repository path not found.")
+        repo_dir = os.path.join(repos_root, repo_id)
+
+        # If repo_path is GitHub URL → clone persistently
+        if repo_path.startswith("http"):
+            if not os.path.exists(repo_dir):
+                Repo.clone_from(repo_path, repo_dir)
+            repo_path = repo_dir
+        else:
+            # Local path
+            if not os.path.exists(repo_path):
+                raise HTTPException(status_code=400, detail="Repository path not found.")
 
         vector_store = VectorStore(collection_name=repo_id)
 
@@ -101,6 +151,5 @@ def ingest_repository(request: IngestRequest):
             "stored_embeddings": vector_store.count(),
         }
 
-    finally:
-        if temp_dir:
-            shutil.rmtree(temp_dir)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

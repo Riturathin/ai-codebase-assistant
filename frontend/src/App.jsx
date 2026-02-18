@@ -1,11 +1,15 @@
 import { useState, useRef, useEffect } from 'react';
 import MessageRenderer from './components/MessageRenderer';
+import Modal from './commons/Modal';
 
 function App() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [repoId, setRepoId] = useState(''); // Empty by default
   const [loading, setLoading] = useState(false);
+  const [previewFile, setPreviewFile] = useState(null);
+  const [previewContent, setPreviewContent] = useState('');
+  const [highlightRange, setHighlightRange] = useState(null);
 
   const assistantIndexRef = useRef(null);
   const bottomRef = useRef(null);
@@ -94,27 +98,28 @@ function App() {
     setLoading(false);
   };
 
+  const handlePreviewFile = (filePath) => {
+    setPreviewFile(filePath);
+    setPreviewContent('');
+    setHighlightRange(null);
+  };
+
   return (
     <div className="page">
       <div className="container">
-        <h1 className="title">AI Codebase Assistant</h1>
+        <h2 className="title">AI Codebase Assistant</h2>
 
         {/* Repo Input */}
         <div style={{ marginBottom: '15px' }}>
           <input
-            style={{
-              padding: '8px',
-              width: '100%',
-              borderRadius: '6px',
-              border: '1px solid #ccc',
-            }}
+            className="repo-input"
             placeholder="Enter repo id (must be ingested first)"
             value={repoId}
             onChange={(e) => setRepoId(e.target.value)}
           />
 
           {!repoId && (
-            <div style={{ fontSize: '12px', opacity: 0.6, marginTop: '5px' }}>
+            <div style={{ fontSize: '12px', opacity: 0.6, color: '#fff', marginTop: '5px' }}>
               Please enter a repo id before asking questions.
             </div>
           )}
@@ -126,7 +131,27 @@ function App() {
             <div key={idx} className={`message ${msg.role === 'user' ? 'user' : 'assistant'}`}>
               <div className="role">{msg.role === 'user' ? 'You' : 'Assistant'}</div>
               <div className="content">
-                <MessageRenderer content={msg.content} />
+                <MessageRenderer
+                  content={msg.content}
+                  onFileClick={async (filePath, startLine, endLine) => {
+                    const cleanPath = filePath.replace(/[`"' ]/g, '');
+
+                    const res = await fetch(
+                      `http://127.0.0.1:8000/file?repo_id=${repoId}&file_path=${encodeURIComponent(cleanPath)}`
+                    );
+
+                    if (!res.ok) {
+                      console.error('File fetch failed');
+                      return;
+                    }
+
+                    const data = await res.json();
+
+                    setPreviewFile(filePath);
+                    setPreviewContent(data.content);
+                    setHighlightRange({ start: startLine, end: endLine });
+                  }}
+                />
               </div>
             </div>
           ))}
@@ -135,12 +160,18 @@ function App() {
 
         {/* Input Row */}
         <div className="inputRow">
-          <input
+          <textarea
+            id="chatbot-textarea"
             className="input"
             placeholder="Ask about the codebase..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault(); // prevent newline
+                sendMessage();
+              }
+            }}
             disabled={!repoId.trim()}
           />
 
@@ -149,6 +180,15 @@ function App() {
           </button>
         </div>
       </div>
+      {previewFile && (
+        <Modal
+          title={previewFile}
+          file={previewFile}
+          content={previewContent}
+          highlightRange={highlightRange}
+          onClose={() => handlePreviewFile(null)}
+        />
+      )}
     </div>
   );
 }

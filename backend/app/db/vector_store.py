@@ -155,6 +155,25 @@ class VectorStore:
         return formatted_results
 
     # ------------------------
+    # Getting Entire file content
+    # ------------------------
+
+    def get_file_content(self, file_path: str):
+        results = self.collection.get(
+            where={"file_path": file_path}, include=["documents", "metadatas"]
+        )
+
+        documents = results.get("documents", [])
+        metadatas = results.get("metadatas", [])
+
+        # Pair and sort by start_line
+        file_chunks = sorted(zip(documents, metadatas), key=lambda x: x[1]["start_line"])
+
+        content = "\n".join(chunk[0] for chunk in file_chunks)
+
+        return content
+
+    # ------------------------
     # Delete Entire Repo Collection
     # ------------------------
 

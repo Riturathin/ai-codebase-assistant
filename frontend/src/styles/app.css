@@ -1,6 +1,6 @@
 .page {
   min-height: 100vh;
-  background-color: #f8f9fa;
+  background-color: #212121;
   padding: 40px 20px;
   width: 100vw;
 }
@@ -11,7 +11,8 @@
 }
 
 .title {
-  margin-bottom: 20px;
+  margin: 20px 0;
+  color: #ffffff;
 }
 
 .chatWindow {
@@ -44,7 +45,7 @@
 .content {
   white-space: pre-wrap;
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 2.5;
 }
 
 .inputRow {
@@ -109,4 +110,20 @@ button {
   color: #4ea1ff;
   cursor: pointer;
   text-decoration: underline;
+}
+
+.inputRow textarea {
+  flex: 1;
+  width: 100%;
+  min-height: 100px;
+  padding: 10px;
+  border-radius: 5px;
+  background: #fefefe;
+}
+
+.repo-input {
+  padding: 8px;
+  width: 100%;
+  border-radius: 6px;
+  border: 1px solid #ccc;
 }
