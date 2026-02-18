@@ -3,6 +3,7 @@
 An internal developer productivity tool that enables natural language exploration of large codebases.
 
 This system allows engineers to ask questions like:
+
 - Where is authentication handled?
 - Which components use this API?
 - Explain this file
@@ -15,6 +16,7 @@ The assistant understands real repositories by ingesting source code, generating
 ## Why this project exists
 
 Modern engineering teams operate on large, long-lived codebases where:
+
 - onboarding is slow
 - ownership is distributed
 - documentation is often outdated
@@ -55,4 +57,3 @@ See `docs/architecture.md` for details.
 - Persistent Chroma vector store
 - Semantic retrieval
 - Grounded LLM-based answers with file citations
-

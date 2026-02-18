@@ -1,6 +1,5 @@
 import os
-from typing import List, Dict
-
+from typing import Dict, List
 
 IGNORED_DIRECTORIES = {
     ".git",
@@ -23,43 +22,68 @@ SUPPORTED_EXTENSIONS = {
 }
 
 
-def load_repository(repo_path: str) -> List[Dict]:
-    """
-    Walk a repository and return a list of file objects.
+class FileLoader:
+    def __init__(self, chunk_size: int = 800, overlap: int = 100):
+        self.chunk_size = chunk_size
+        self.overlap = overlap
 
-    Each file object contains:
-    - file_path
-    - content
-    - size (bytes)
-    """
-    file_objects = []
+    def load_repository(self, repo_path: str) -> List[Dict]:
+        files = self._read_files(repo_path)
+        return self._chunk_files(files)
 
-    for root, dirs, files in os.walk(repo_path):
-        # Filter ignored directories in-place
-        dirs[:] = [d for d in dirs if d not in IGNORED_DIRECTORIES]
+    def _read_files(self, repo_path: str) -> List[Dict]:
+        file_objects = []
+
+        for root, dirs, files in os.walk(repo_path):
+            dirs[:] = [d for d in dirs if d not in IGNORED_DIRECTORIES]
+
+            for file in files:
+                _, ext = os.path.splitext(file)
+
+                if ext not in SUPPORTED_EXTENSIONS:
+                    continue
+
+                full_path = os.path.join(root, file)
+
+                try:
+                    with open(full_path, "r", encoding="utf-8") as f:
+                        content = f.read()
+
+                    file_objects.append(
+                        {
+                            "file_path": os.path.relpath(full_path, repo_path),
+                            "content": content,
+                        }
+                    )
+
+                except Exception:
+                    continue
+
+        return file_objects
+
+    def _chunk_files(self, files: List[Dict]) -> List[Dict]:
+        chunks = []
 
         for file in files:
-            _, ext = os.path.splitext(file)
+            content = file["content"]
+            file_path = file["file_path"]
 
-            if ext not in SUPPORTED_EXTENSIONS:
-                continue
+            start = 0
 
-            full_path = os.path.join(root, file)
+            while start < len(content):
+                end = start + self.chunk_size
 
-            try:
-                with open(full_path, "r", encoding="utf-8") as f:
-                    content = f.read()
+                chunk_text = content[start:end]
 
-                file_objects.append(
+                chunks.append(
                     {
-                        "file_path": os.path.relpath(full_path, repo_path),
-                        "content": content,
-                        "size": len(content),
+                        "file_path": file_path,
+                        "content": chunk_text,
+                        "start_line": content[:start].count("\n") + 1,
+                        "end_line": content[:end].count("\n") + 1,
                     }
                 )
 
-            except Exception:
-                # Skip unreadable files
-                continue
+                start += self.chunk_size - self.overlap
 
-    return file_objects
+        return chunks

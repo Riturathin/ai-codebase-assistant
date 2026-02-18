@@ -1,6 +1,17 @@
-node_modules/
-.env
+# Vector database
+backend/chroma_db/
+
+# Python
+backend/.venv/
 __pycache__/
-.venv/
-dist/
-build/
+*.pyc
+
+# Node
+node_modules/
+frontend/node_modules/
+
+# Env
+.env
+
+# Mac
+.DS_Store

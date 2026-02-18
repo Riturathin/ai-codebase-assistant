@@ -25,15 +25,18 @@ This system is designed as an internal developer productivity platform rather th
 ## Key Components
 
 ### Ingestion Layer
+
 - Walks the repository
 - Splits files into meaningful chunks
 - Preserves file path, language, and line ranges
 
 ### Retrieval Layer
+
 - Performs semantic similarity search
 - Ranks and filters relevant code chunks
 
 ### Answer Generation
+
 - Uses retrieved code as context
 - Produces explanations, references, and insights
 - Streams responses to the frontend

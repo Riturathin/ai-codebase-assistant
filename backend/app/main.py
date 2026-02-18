@@ -1,56 +1,106 @@
-import os
 from dotenv import load_dotenv
 
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "..", ".env"))
+load_dotenv()
 
-from fastapi import FastAPI
-from app.ingest.loader import load_repository
-from app.ingest.chunker import chunk_repository
-from app.db.vector_store import VectorStore
-from app.query.answer_generator import AnswerGenerator
+import os
+import shutil
+import tempfile
+
+from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+from git import Repo
+from pydantic import BaseModel
+
+from .db.vector_store import VectorStore
+from .ingest.loader import FileLoader
+from .query.answer_generator import AnswerGenerator
+
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+file_loader = FileLoader()
 
 
-app = FastAPI(title="AI Codebase Assistant Backend")
-answer_generator = None
+# ------------------------
+# Request Models
+# ------------------------
 
 
-vector_store = None
+class QueryRequest(BaseModel):
+    repo_id: str
+    question: str
 
 
-@app.on_event("startup")
-def startup_event():
-    global vector_store, answer_generator
-    vector_store = VectorStore()
-    answer_generator = AnswerGenerator()
+class IngestRequest(BaseModel):
+    repo_path: str
+    repo_id: str
 
 
+# ------------------------
+# QUERY ENDPOINT
+# ------------------------
 
-@app.get("/health")
-def health_check():
-    return {"status": "ok"}
+
+@app.post("/query")
+async def query_repo(request: QueryRequest):
+    try:
+        vector_store = VectorStore(collection_name=request.repo_id)
+
+        # 🔥 Retrieve relevant chunks first
+        retrieved_chunks = vector_store.query(request.question)
+
+        answer_generator = AnswerGenerator()
+
+        return StreamingResponse(
+            answer_generator.stream_answer(request.question, retrieved_chunks),
+            media_type="text/plain",
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ------------------------
+# INGEST ENDPOINT
+# ------------------------
 
 
 @app.post("/ingest")
-def ingest_repository(repo_path: str):
-    files = load_repository(repo_path)
-    chunks = chunk_repository(files)
+def ingest_repository(request: IngestRequest):
+    temp_dir = None
 
-    vector_store.add_chunks(chunks)
+    try:
+        repo_path = request.repo_path
+        repo_id = request.repo_id
 
-    return {
-        "total_files": len(files),
-        "total_chunks": len(chunks),
-        "stored_embeddings": vector_store.count(),
-    }
-@app.post("/query")
-def query_repository(question: str):
-    retrieved = vector_store.query(question)
+        if repo_path.startswith("http"):
+            temp_dir = tempfile.mkdtemp()
+            Repo.clone_from(repo_path, temp_dir)
+            repo_path = temp_dir
 
-    answer = answer_generator.generate_answer(question, retrieved)
+        if not os.path.exists(repo_path):
+            raise HTTPException(status_code=400, detail="Repository path not found.")
 
-    return {
-        "question": question,
-        "answer": answer,
-        "sources": retrieved,
-    }
+        vector_store = VectorStore(collection_name=repo_id)
 
+        chunks = file_loader.load_repository(repo_path)
+        vector_store.add_chunks(chunks)
+
+        return {
+            "repo_id": repo_id,
+            "total_files": len(set(c["file_path"] for c in chunks)),
+            "total_chunks": len(chunks),
+            "stored_embeddings": vector_store.count(),
+        }
+
+    finally:
+        if temp_dir:
+            shutil.rmtree(temp_dir)

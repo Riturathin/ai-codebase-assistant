@@ -1,0 +1,29 @@
+{
+  "name": "ai-codebase-assistant",
+  "version": "1.0.0",
+  "description": "An internal developer productivity tool that enables natural language exploration of large codebases.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "format": "prettier --write . && black . && isort .",
+    "format:check": "prettier --check . && black --check . && isort --check ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Riturathin/ai-codebase-assistant.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Riturathin/ai-codebase-assistant/issues"
+  },
+  "homepage": "https://github.com/Riturathin/ai-codebase-assistant#readme",
+  "devDependencies": {
+    "prettier": "^3.8.1"
+  }
+}

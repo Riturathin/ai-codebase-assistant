@@ -1,0 +1,112 @@
+.page {
+  min-height: 100vh;
+  background-color: #f8f9fa;
+  padding: 40px 20px;
+  width: 100vw;
+}
+
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.title {
+  margin-bottom: 20px;
+}
+
+.chatWindow {
+  height: 450px;
+  border: 1px solid #ddd;
+  border-radius: 12px;
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background-color: #ffffff;
+}
+
+.message {
+  max-width: 80%;
+  padding: 12px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.role {
+  font-weight: 600;
+  margin-bottom: 4px;
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.content {
+  white-space: pre-wrap;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.inputRow {
+  margin-top: 16px;
+  display: flex;
+  gap: 10px;
+}
+
+input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+button {
+  padding: 10px 16px;
+  border-radius: 8px;
+  border: none;
+  background-color: #1976d2;
+  color: #fff;
+  cursor: pointer;
+}
+
+.codeBlock {
+  background: #1e1e1e;
+  color: #d4d4d4;
+  padding: 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+  font-family: 'Fira Code', monospace;
+  font-size: 13px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.fileLink {
+  color: #4ea1ff;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.chatWindow {
+  background: #1e1e1e;
+  color: #d4d4d4;
+}
+
+.message.assistant {
+  background: #252526;
+}
+
+.inlineCode {
+  background: #2d2d2d;
+  color: #dcdcaa;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Fira Code', monospace;
+  font-size: 13px;
+}
+
+.fileLink {
+  color: #4ea1ff;
+  cursor: pointer;
+  text-decoration: underline;
+}
