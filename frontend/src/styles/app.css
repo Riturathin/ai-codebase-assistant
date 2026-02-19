@@ -28,7 +28,7 @@
 }
 
 .message {
-  max-width: 80%;
+  /* max-width: 80%; */
   padding: 12px;
   border-radius: 10px;
   display: flex;
@@ -52,6 +52,9 @@
   margin-top: 16px;
   display: flex;
   gap: 10px;
+  justify-content: center;
+  align-items: center;
+  position: relative;
 }
 
 input {
@@ -62,12 +65,15 @@ input {
 }
 
 button {
-  padding: 10px 16px;
+  padding: 10px;
   border-radius: 8px;
   border: none;
   background-color: #1976d2;
   color: #fff;
   cursor: pointer;
+  position: absolute;
+  bottom: 7px;
+  right: 10px;
 }
 
 .codeBlock {
@@ -115,7 +121,7 @@ button {
 .inputRow textarea {
   flex: 1;
   width: 100%;
-  min-height: 100px;
+  min-height: auto;
   padding: 10px;
   border-radius: 5px;
   background: #fefefe;

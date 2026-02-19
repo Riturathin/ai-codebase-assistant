@@ -113,14 +113,14 @@ function App() {
         <div style={{ marginBottom: '15px' }}>
           <input
             className="repo-input"
-            placeholder="Enter repo id (must be ingested first)"
+            placeholder="Enter a valid repo name (e.g. user/repo or github.com/user/repo)"
             value={repoId}
             onChange={(e) => setRepoId(e.target.value)}
           />
 
           {!repoId && (
             <div style={{ fontSize: '12px', opacity: 0.6, color: '#fff', marginTop: '5px' }}>
-              Please enter a repo id before asking questions.
+              Enter a valid repo name.
             </div>
           )}
         </div>

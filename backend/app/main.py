@@ -93,18 +93,21 @@ async def query_repo(request: QueryRequest):
 
         questions = split_questions(request.question)
 
+        is_multi = len(questions) > 1
+
         def stream():
             for idx, q in enumerate(questions, 1):
                 retrieved_chunks = vector_store.query(q)
 
-                # Stream section header
-                yield f"\n##Q## {idx}. {q}\n"
+                # Only format header if truly multi-question
+                if is_multi:
+                    yield f"\n##Q## {idx}. {q}\n"
 
-                # Stream answer for this question
                 for chunk in answer_generator.stream_answer(q, retrieved_chunks):
                     yield chunk
 
-                yield "\n\n"
+                if is_multi:
+                    yield "\n\n"
 
         return StreamingResponse(stream(), media_type="text/plain")
 

@@ -34,21 +34,22 @@ class AnswerGenerator:
         context = "\n".join(context_blocks)
 
         prompt = f"""
-    You are an internal codebase assistant.
+            You are an internal codebase assistant.
 
-    STRICT RULES:
-    - Use ONLY the provided code context.
-    - Do NOT invent files.
-    - If the answer is not in the context, say: "I could not find this in the repository."
-    - Always mention file paths and line numbers.
-    - Keep answers concise and technical.
+            RULES:
+            - Use ONLY the provided code context.
+            - You may analyze structure, complexity, repetition, and patterns.
+            - Do NOT invent files that are not shown.
+            - If the context is insufficient, say so.
+            - Mention file paths and line numbers when relevant.
+            - Be concise and technical.
 
-    User Question:
-    {question}
+            User Question:
+            {question}
 
-    Code Context:
-    {context}
-    """
+            Code Context:
+            {context}
+        """
 
         with self.client.responses.stream(
             model="gpt-4o-mini",

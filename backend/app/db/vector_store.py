@@ -79,34 +79,6 @@ class VectorStore:
 
             total_chunks = len(chunks)
 
-            for i in range(0, total_chunks, batch_size):
-                batch = chunks[i : i + batch_size]
-
-                documents = []
-                metadatas = []
-                ids = []
-
-                for chunk in batch:
-                    documents.append(chunk["content"])
-                    metadatas.append(
-                        {
-                            "file_path": chunk["file_path"],
-                            "start_line": chunk["start_line"],
-                            "end_line": chunk["end_line"],
-                        }
-                    )
-                    ids.append(f"{chunk['file_path']}:{chunk['start_line']}")
-
-                # 🔥 Generate embeddings manually
-                embeddings = self._embed(documents)
-
-                self.collection.add(
-                    documents=documents,
-                    embeddings=embeddings,
-                    metadatas=metadatas,
-                    ids=ids,
-                )
-
     # ------------------------
     # Count
     # ------------------------
